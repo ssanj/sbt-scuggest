@@ -2,7 +2,7 @@ name := "sbt-scuggest"
 
 organization := "net.ssanj"
 
-version := "0.0.2.3"
+version := "0.0.2.17"
 
 scalaVersion := "2.10.6"
 
@@ -13,3 +13,5 @@ scalacOptions ++= Seq(
 )
 
 sbtPlugin := true
+
+libraryDependencies += "com.typesafe.play" %% "play-json" % "2.4.8"
