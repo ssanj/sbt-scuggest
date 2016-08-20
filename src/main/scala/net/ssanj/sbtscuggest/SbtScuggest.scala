@@ -150,11 +150,18 @@ object SbtScuggest extends AutoPlugin {
     }.toEither(CouldNotParseContent(content, _))
   }
 
-  private def writeProjectFile(projectFile: File, json: JsValue): ProjectLoadType[Unit] = {
-    //_ <- Try(sbt.IO.write(projectFile, updatedJson).toEither.leftMap(CouldNotWriteFile(projectFile,))
-    Try {
-      println("updated proj json: " + json)
-    }.toEither(CouldNotWriteFile(projectFile, _))
+  private def getProjectFileBackup(projectFile: File): ProjectLoadType[File] =  {
+      val currentTime = java.time.LocalDateTime.now
+      val filterOut = Seq(':', '-', 'T', '.')
+      Right(new File(projectFile.getAbsolutePath + s".${currentTime.toString.filterNot(filterOut.contains)}"))
+  }
+
+  private def writeProjectFile(projectFile: File, updatedJson: JsValue): ProjectLoadType[Unit] = {
+    for {
+      backupFile <- getProjectFileBackup(projectFile)
+      _          <- Try(sbt.IO.copyFile(projectFile, backupFile)).toEither(CouldNotWriteFile(backupFile, _))
+      _          <- Try(sbt.IO.write(projectFile, updatedJson.toString)).toEither(CouldNotWriteFile(projectFile, _))
+    } yield ()
   }
 
   private def defaultProject: ProjectLoadType[String] = {
