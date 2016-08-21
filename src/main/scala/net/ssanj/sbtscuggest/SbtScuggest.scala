@@ -11,17 +11,27 @@ import scala.util.{Failure, Success, Try}
 object SbtScuggest extends AutoPlugin {
 
   object autoImport  {
-    val scuggestClassDirs       = SettingKey[Seq[File]](
+    val scuggestClassDirs = SettingKey[Seq[File]](
       "scuggest-class-dirs", "The target directories that scuggest uses for imports")
 
-    val scuggestFilters         = SettingKey[Seq[String]](
-      "scuggest-filters", "Paths that are not consider during an import search")
+    val scuggestSearchFilters = SettingKey[Seq[String]](
+      "scuggest-search-filters", "Paths that are not consider during an import search")
+
+    val scuggestDepFilters = SettingKey[Seq[String]](
+      "scuggest-dep-filters", "Dependencies that are not added to the import search list")
 
     val scuggestSublimeProjName = SettingKey[String](
       "scuggest-sublime-proj-name", "the name of the sublime project file")
 
-    val scuggestGen             = TaskKey[Unit](
+    val scuggestSimulate = SettingKey[Boolean](
+      "scuggest-simulate", "whether to simulate the updates to the Sublime Text project file. The default is true")
+
+    val scuggestVerbose = SettingKey[Boolean](
+      "scuggest-verbose", "verbose mode, which allows you to see what settings and artefacts are being used. The default is false")
+
+    val scuggestGen = TaskKey[Unit](
       "scuggest-gen", "Generates import entries for your Sublime Text project.")
+
   }
 
   private val emptySublimeProject =
@@ -39,7 +49,7 @@ object SbtScuggest extends AutoPlugin {
   import autoImport._
 
   override lazy val projectSettings = Seq(
-      scuggestFilters in ThisBuild := Seq("sun", "com/sun"),
+      scuggestSearchFilters in ThisBuild := Seq("sun", "com/sun"),
 
       scuggestClassDirs <<= (Keys.classDirectory in Compile,
                              Keys.classDirectory in Test){ (srcDir, testDir) =>
@@ -48,20 +58,36 @@ object SbtScuggest extends AutoPlugin {
 
       scuggestSublimeProjName <<= (Keys.name)(identity),
 
+      scuggestDepFilters in ThisBuild :=
+        Seq(
+            """test-interface-.+\.jar$""",
+            """scala-parser-combinators_.+\.jar$"""
+        ),
+
+      scuggestSimulate in ThisBuild := true,
+
+      scuggestVerbose in ThisBuild := false,
+
       scuggestGen <<= (Keys.state,
                        scuggestSublimeProjName,
                        scuggestClassDirs,
-                       scuggestFilters,
-                       Keys.streams) map scuggest
+                       scuggestSearchFilters,
+                       scuggestDepFilters,
+                       Keys.streams,
+                       scuggestSimulate,
+                       scuggestVerbose) map scuggest
   )
 
   def scuggest(state: State,
                projectName: String,
                classDirs: Seq[File],
-               filters: Seq[String],
-               streams: TaskStreams[_]) {
+               searchFilters: Seq[String],
+               scuggestDepFilters: Seq[String],
+               streams: TaskStreams[_],
+               simulate: Boolean,
+               verbose: Boolean) {
+
     val log = streams.log
-    log.info("scuggest called!")
 
     val extracted = Project.extract(state)
     val buildStruct = extracted.structure
@@ -94,18 +120,35 @@ object SbtScuggest extends AutoPlugin {
               else None
             }
 
-          log.info("project dir: " + extracted.currentRef.build)
-          log.info("deps: " + dependencyFiles.map(_.getAbsolutePath()).mkString("\n"))
-          log.info("class dirs: " + classDirs.map(_.getAbsolutePath()).mkString("\n"))
-          log.info("java: " + javaHomeRtJar.fold("Could not find JAVA_HOME")(_.getAbsolutePath))
-          log.info("project: " + projectName)
+
+          val depFilterRegs = scuggestDepFilters.map(_.r)
+          val filteredDependencyFiles =
+            dependencyFiles.filterNot { dep =>
+              depFilterRegs.exists(_.findFirstIn(dep.getAbsolutePath).isDefined)
+            }
+
+          if (verbose) {
+            log.info("simulated: " + simulate)
+            log.info("project dir: " + extracted.currentRef.build)
+            log.info("deps: \n" + dependencyFiles.map(_.getAbsolutePath()).mkString("\n"))
+            log.info("filtered deps: \n" + filteredDependencyFiles.map(_.getAbsolutePath()).mkString("\n"))
+            log.info("class dirs: \n" + classDirs.map(_.getAbsolutePath()).mkString("\n"))
+            log.info("java: " + javaHomeRtJar.fold("Could not find JAVA_HOME")(_.getAbsolutePath))
+            log.info("project name: " + projectName)
+
+            log.info("project file: " + getProjectFile(extracted.currentRef.build, projectName).
+              fold(_ => "???", _.getAbsolutePath))
+          }
+
           val result =
             updateSublimeProject(extracted.currentRef.build,
                                  projectName,
-                                 dependencyFiles.toSeq,
+                                 filteredDependencyFiles.toSeq,
                                  classDirs,
                                  javaHomeRtJar,
-                                 filters) match {
+                                 searchFilters,
+                                 simulate,
+                                 log) match {
 
               case Left(CouldNotFindProjectDir(projDir, error))            =>
                 s"Could not find project directory: $projDir due to: ${error.getMessage}"
@@ -160,8 +203,16 @@ object SbtScuggest extends AutoPlugin {
     for {
       backupFile <- getProjectFileBackup(projectFile)
       _          <- Try(sbt.IO.copyFile(projectFile, backupFile)).toEither(CouldNotWriteFile(backupFile, _))
-      _          <- Try(sbt.IO.write(projectFile, updatedJson.toString)).toEither(CouldNotWriteFile(projectFile, _))
+      _          <- Try(sbt.IO.write(projectFile, Json.prettyPrint(updatedJson))).toEither(CouldNotWriteFile(projectFile, _))
     } yield ()
+  }
+
+  private def printProjectFile(log: sbt.Logger, projectFile: File, updatedJson: JsValue): ProjectLoadType[Unit] = {
+    log.info(s"----- This is a simulation -----")
+    log.info(s"${projectFile} will be updated the following contents:")
+    log.info(Json.prettyPrint(updatedJson))
+    log.info(s"To update the project with the above contents, 'set scuggestSimulate := false' and run scuggestGen.")
+    Right(())
   }
 
   private def defaultProject: ProjectLoadType[String] = {
@@ -179,13 +230,16 @@ object SbtScuggest extends AutoPlugin {
                                    dependencyFiles: Seq[File],
                                    classesDirs: Seq[File],
                                    javaRt: Option[File],
-                                   filters: Seq[String]): ProjectLoadType[Unit] = {
+                                   searchFilters: Seq[String],
+                                   simulate: Boolean,
+                                   log: sbt.Logger): ProjectLoadType[Unit] = {
       for {
         projectFile <- getProjectFile(projectURI, projectName)
         content     <- if (projectFile.exists()) readProjectFile(projectFile) else defaultProject
         json        <- parseProjectJson(content)
-        updatedJson <- addScuggestElements(json, dependencyFiles, classesDirs, javaRt, filters)
-        _           <- writeProjectFile(projectFile, updatedJson)
+        updatedJson <- addScuggestElements(json, dependencyFiles, classesDirs, javaRt, searchFilters)
+        _           <- if (simulate) printProjectFile(log, projectFile, updatedJson)
+                       else writeProjectFile(projectFile, updatedJson)
       } yield ()
   }
 
@@ -193,7 +247,7 @@ object SbtScuggest extends AutoPlugin {
                                   dependencyFiles: Seq[File],
                                   classesDirs: Seq[File],
                                   javaRt: Option[File],
-                                  filters: Seq[String]): ProjectLoadType[JsValue] = {
+                                  searchFilters: Seq[String]): ProjectLoadType[JsValue] = {
     pjson match {
       case JsObject(_) =>
         val projectJson = pjson.asInstanceOf[JsObject]
@@ -206,7 +260,7 @@ object SbtScuggest extends AutoPlugin {
                       JsObject(
                         Map(
                           "scuggest_import_path" -> JsArray(allDeps.map(f => JsString(f.getAbsolutePath))),
-                          "scuggest_filtered_path" -> JsArray(filters.map(JsString(_)))
+                          "scuggest_filtered_path" -> JsArray(searchFilters.map(JsString(_)))
                         )
                       )
                     )
@@ -219,7 +273,7 @@ object SbtScuggest extends AutoPlugin {
                   val updatedSettings =
                   (settings - ("scuggest_import_path") - ("scuggest_filtered_path")) +
                     ("scuggest_import_path" -> JsArray(allDeps.map(f => JsString(f.getAbsolutePath)))) +
-                    ("scuggest_filtered_path" -> JsArray(filters.map(JsString(_))))
+                    ("scuggest_filtered_path" -> JsArray(searchFilters.map(JsString(_))))
 
                   Right(updatedSettings): ProjectLoadType[JsValue]
 
