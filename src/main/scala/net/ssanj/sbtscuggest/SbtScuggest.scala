@@ -10,6 +10,10 @@ import scala.util.{Failure, Success, Try}
 
 object SbtScuggest extends AutoPlugin {
 
+  override def requires = plugins.JvmPlugin
+
+  override def trigger = allRequirements
+
   object autoImport  {
     val scuggestClassDirs = SettingKey[Seq[File]](
       "scuggest-class-dirs", "The target directories that scuggest uses for imports")
