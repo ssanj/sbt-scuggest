@@ -2,7 +2,7 @@ name := "sbt-scuggest"
 
 organization := "net.ssanj"
 
-version := "0.0.4.1"
+version := "0.0.4.2"
 
 scalaVersion := "2.10.6"
 
@@ -18,13 +18,4 @@ sbtPlugin := true
 
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.4.8"
 
-publishMavenStyle := true
-
-pomExtra := (
-  <developers>
-    <developer>
-    <id>ssanj</id>
-    <name>Sanjiv Sahayam</name>
-      <url>https://github.com/ssanj</url>
-    </developer>
-  </developers>)
+publishMavenStyle := false

@@ -14,6 +14,12 @@ addSbtPlugin("net.ssanj" % "sbt-scuggest" % "0.0.4.0")
 
 or to install it globally add it to __~/.sbt/0.13/plugins/plugin.sbt__.
 
+If the plugin fails to resolve add this resolver to your __project/plugins.sbt__:
+
+```scala
+resolvers += Resolver.url("ssanj", new URL("https://dl.bintray.com/ssanj/sbt-plugins"))(Resolver.ivyStylePatterns)
+```
+
 ## Settings
 
 * `scuggestSimulate`: Whether to simulate updating the Sublime project file (write to STDOUT) or to update the project file. Defaults to `true`. Run `scuggestGen` with this on to see what will be added to your Sublime project file. Once you are happy with it, then `set scuggestSimulate := false` and run `scuggestGen` to update your Sublime project file.
