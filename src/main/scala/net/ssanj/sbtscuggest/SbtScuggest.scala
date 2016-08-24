@@ -96,8 +96,6 @@ object SbtScuggest extends AutoPlugin {
     val extracted = Project.extract(state)
     val buildStruct = extracted.structure
 
-    log.info(s"project extracted: " + extracted.currentRef)
-
     EvaluateTask(buildStruct,
                  Keys.updateClassifiers,
                  state,
@@ -171,6 +169,9 @@ object SbtScuggest extends AutoPlugin {
 
               case Left(InvalidSettingsElement(settings, reason)) =>
                 s"Invalid settings element: ${settings}, due to: $reason"
+
+              case Right(_) if simulate                           =>
+                s"simulation complete"
 
               case Right(_)                                       =>
                 s"successfully updated ${projectName}.sublime-project"
