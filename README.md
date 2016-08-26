@@ -9,7 +9,7 @@ _NB_: In addition if SBT Scuggest finds a __JAVA_HOME__ environment variable def
 Add the following to your __project/plugins.sbt__:
 
 ```scala
-addSbtPlugin("net.ssanj" % "sbt-scuggest" % "0.0.4.0")
+addSbtPlugin("net.ssanj" % "sbt-scuggest" % "0.0.4.2")
 ```
 
 or to install it globally add it to __~/.sbt/0.13/plugins/plugin.sbt__.
