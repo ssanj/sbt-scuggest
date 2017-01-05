@@ -6,13 +6,19 @@ _NB_: In addition if SBT Scuggest finds a __JAVA_HOME__ environment variable def
 
 ## Configuration
 
-Add the following to your __project/plugins.sbt__:
+If you're using SBT versions 0.13.0 to 0.13.9 add the following to your __project/plugins.sbt__:
 
 ```scala
 addSbtPlugin("net.ssanj" % "sbt-scuggest" % "0.0.4.2")
 ```
 
-or to install it globally add it to __~/.sbt/0.13/plugins/plugin.sbt__.
+For SBT version 0.13.10 and beyond add the following to your __project/plugins.sbt__:
+
+```scala
+addSbtPlugin("net.ssanj" % "sbt-scuggest" % "0.0.5.0")
+```
+
+To install it globally add the required version to __~/.sbt/0.13/plugins/plugin.sbt__.
 
 If the plugin fails to resolve add this resolver to your __project/plugins.sbt__:
 
@@ -30,7 +36,7 @@ resolvers += Resolver.url("ssanj", new URL("https://dl.bintray.com/ssanj/sbt-plu
 
 * `scuggestSearchFilters`: Which paths to ignore when searching for classes. Defaults to `List("sun", "com/sun")`.
 
-* `scuggestDepFilters`: Any dependencies to not include in the project file. Defaults to `List(test-interface-.+\.jar$, scala-parser-combinators_.+\.jar$)`
+* `scuggestDepFilters`: Any dependencies to not include in the project file. Defaults to: `List(test-interface-.+\.jar$, scala-parser-combinators_.+\.jar$, scala-reflect-.+\.jar$, scala-compiler-.+\.jar$, jline-.+\.jar$, scala-xml_.+\.jar)`
 
 * `scuggestVerbose`: Additional logging about how dependencies are calculated. Defaults to `false`.
 
@@ -55,6 +61,13 @@ resolvers += Resolver.url("ssanj", new URL("https://dl.bintray.com/ssanj/sbt-plu
 [info] }
 [info] To update the project with the above contents, "set scuggestSimulate := false" and run scuggestGen.
 ```
+
+## Publishing
+
+To publish a new version perform the following tasks:
+
+1. publish
+2. bintrayRelease
 
 ## Caveats
 

@@ -65,7 +65,11 @@ object SbtScuggest extends AutoPlugin {
       scuggestDepFilters in ThisBuild :=
         Seq(
             """test-interface-.+\.jar$""",
-            """scala-parser-combinators_.+\.jar$"""
+            """scala-parser-combinators_.+\.jar$""",
+            """scala-reflect-.+\.jar$""",
+            """scala-compiler-.+\.jar$""",
+            """jline-.+\.jar$""",
+            """scala-xml_.+\.jar"""
         ),
 
       scuggestSimulate in ThisBuild := true,
@@ -97,17 +101,19 @@ object SbtScuggest extends AutoPlugin {
     val buildStruct = extracted.structure
 
     EvaluateTask(buildStruct,
-                 Keys.updateClassifiers,
+                 Keys.update,
                  state,
                  extracted.currentRef).fold(state)(Function.tupled { (state, result) =>
       result match {
         case Value(updateReport) =>
 
+          val validDepTypes = Seq("bundle", "jar")
+
           val dependencyFiles: Set[File] = scala.collection.immutable.HashSet() ++ (
               for {
                 configuration  <- updateReport.configurations
                 module         <- configuration.modules
-                sourceArtifact <- module.artifacts if sourceArtifact._1.`type` == "jar"
+                sourceArtifact <- module.artifacts if validDepTypes.contains(sourceArtifact._1.`type`)
               } yield sourceArtifact._2
           )
 
