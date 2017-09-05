@@ -1,0 +1,5 @@
+$ exists existingProject.sublime-project
+> set scuggestSimulate := false
+> scuggestGen
+$ exists existingProject.sublime-project
+> verifySublimeProj

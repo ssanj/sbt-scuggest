@@ -1,0 +1,18 @@
+{
+    "folders":
+    [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "Scoggle" : {
+            "test_suffixes" :
+            [
+                "Spec.scala",
+                "Props.scala"
+            ],
+            "log" : true
+        }
+    }
+}
