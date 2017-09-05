@@ -1,4 +1,4 @@
 > set scuggestSimulate := false
 > scuggestGen
-$ exists simple.sublime-project
+$ exists emptyProject.sublime-project
 > verifySublimeProj

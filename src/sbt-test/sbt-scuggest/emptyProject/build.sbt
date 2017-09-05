@@ -4,7 +4,7 @@ def trueOrError(cond: Boolean, error: String): Unit = if (cond) {} else sys.erro
 
 lazy val root = (project in file("."))
   .settings(
-    name := "simple",
+    name := "emptyProject",
     version := "0.1",
     scalaVersion := "2.10.6",
     TaskKey[Unit]("verify-sublime-proj") := {
