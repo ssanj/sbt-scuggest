@@ -210,12 +210,16 @@ object SbtScuggest extends AutoPlugin {
       Right(new File(projectFile.getAbsolutePath + s".${currentTime.toString.filterNot(filterOut.contains)}"))
   }
 
-  private def writeProjectFile(projectFile: File, updatedJson: JsValue): ProjectLoadType[Unit] = {
+  private def backupAndWriteProjectFile(projectFile: File, updatedJson: JsValue): ProjectLoadType[Unit] = {
     for {
       backupFile <- getProjectFileBackup(projectFile)
       _          <- Try(sbt.IO.copyFile(projectFile, backupFile)).toEither(CouldNotWriteFile(backupFile, _))
       _          <- Try(sbt.IO.write(projectFile, Json.prettyPrint(updatedJson))).toEither(CouldNotWriteFile(projectFile, _))
     } yield ()
+  }
+
+  private def writeProjectFile(projectFile: File, updatedJson: JsValue): ProjectLoadType[Unit] = {
+    Try(sbt.IO.write(projectFile, Json.prettyPrint(updatedJson))).toEither(CouldNotWriteFile(projectFile, _))
   }
 
   private def printProjectFile(log: sbt.Logger, projectFile: File, updatedJson: JsValue): ProjectLoadType[Unit] = {
@@ -250,6 +254,7 @@ object SbtScuggest extends AutoPlugin {
         json        <- parseProjectJson(content)
         updatedJson <- addScuggestElements(json, dependencyFiles, classesDirs, javaRt, searchFilters)
         _           <- if (simulate) printProjectFile(log, projectFile, updatedJson)
+                       else if (projectFile.exists()) backupAndWriteProjectFile(projectFile, updatedJson)
                        else writeProjectFile(projectFile, updatedJson)
       } yield ()
   }
@@ -267,13 +272,9 @@ object SbtScuggest extends AutoPlugin {
               (projectJson \ "settings").toOption.fold{
                 val settings =
                   JsObject(
-                    Map("settings" ->
-                      JsObject(
-                        Map(
-                          "scuggest_import_path" -> JsArray(allDeps.map(f => JsString(f.getAbsolutePath))),
-                          "scuggest_filtered_path" -> JsArray(searchFilters.map(JsString(_)))
-                        )
-                      )
+                    Map(
+                      "scuggest_import_path" -> JsArray(allDeps.map(f => JsString(f.getAbsolutePath))),
+                      "scuggest_filtered_path" -> JsArray(searchFilters.map(JsString(_)))
                     )
                   )
 
