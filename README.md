@@ -15,7 +15,7 @@ addSbtPlugin("net.ssanj" % "sbt-scuggest" % "0.0.4.2")
 For SBT version 0.13.10 and beyond add the following to your __project/plugins.sbt__:
 
 ```scala
-addSbtPlugin("net.ssanj" % "sbt-scuggest" % "0.0.5.0")
+addSbtPlugin("net.ssanj" % "sbt-scuggest" % "0.0.6.0")
 ```
 
 To install it globally add the required version to __~/.sbt/0.13/plugins/plugin.sbt__.
