@@ -11,4 +11,4 @@ cache:
     - $HOME/.sbt
 
 script:
-  - sbt ^ scripted;
+  - sbt ^^ scripted;
