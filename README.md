@@ -12,13 +12,13 @@ If you're using SBT versions 0.13.0 to 0.13.9 add the following to your __projec
 addSbtPlugin("net.ssanj" % "sbt-scuggest" % "0.0.4.2")
 ```
 
-For SBT version 0.13.10 and beyond add the following to your __project/plugins.sbt__:
+For SBT version 0.13.10 and 1.x add the following to your __project/plugins.sbt__:
 
 ```scala
 addSbtPlugin("net.ssanj" % "sbt-scuggest" % "0.0.7.0")
 ```
 
-To install it globally add the required version to __~/.sbt/0.13/plugins/plugin.sbt__.
+To install it globally add the required version to __~/.sbt/0.13/plugins/plugin.sbt__ or __~/.sbt/1.0/plugins/plugin.sbt__ depending on your sbt version.
 
 If the plugin fails to resolve add this resolver to your __project/plugins.sbt__:
 
