@@ -22,14 +22,9 @@ package object sbtscuggest {
   type ProjectLoadType[A] =  Either[ProjectLoadError, A]
 
   implicit final class TryOps[A](val t: Try[A]) extends AnyVal {
-    def toEither[B](f: Throwable => B): Either[B, A] = t match {
+    def toE[B](f: Throwable => B): Either[B, A] = t match {
       case Success(a) => Right(a)
       case Failure(e) => Left(f(e))
-    }
-
-    def fold[B](f: Throwable => B, s: A => B): B = t match {
-      case Success(a) => s(a)
-      case Failure(e) => f(e)
     }
   }
 

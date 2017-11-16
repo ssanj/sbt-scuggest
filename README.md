@@ -15,7 +15,7 @@ addSbtPlugin("net.ssanj" % "sbt-scuggest" % "0.0.4.2")
 For SBT version 0.13.10 and beyond add the following to your __project/plugins.sbt__:
 
 ```scala
-addSbtPlugin("net.ssanj" % "sbt-scuggest" % "0.0.6.0")
+addSbtPlugin("net.ssanj" % "sbt-scuggest" % "0.0.7.0")
 ```
 
 To install it globally add the required version to __~/.sbt/0.13/plugins/plugin.sbt__.
@@ -62,12 +62,18 @@ resolvers += Resolver.url("ssanj", new URL("https://dl.bintray.com/ssanj/sbt-plu
 [info] To update the project with the above contents, "set scuggestSimulate := false" and run scuggestGen.
 ```
 
+## Tests
+
+```
+^ scripted
+```
+
 ## Publishing
 
 To publish a new version perform the following tasks:
 
-1. publish
-2. bintrayRelease
+1. `^ publish`
+2. `bintrayRelease`
 
 ## Caveats
 

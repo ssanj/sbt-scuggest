@@ -8,7 +8,7 @@ lazy val root = (project in file("."))
     version := "0.1",
     scalaVersion := "2.10.6",
     TaskKey[Unit]("verify-sublime-proj") := {
-      val process = Process("cat", Seq(baseDirectory.value / name.value + ".sublime-project"))
+      val process = sys.process.Process("cat", Seq(baseDirectory.value / name.value + ".sublime-project"))
       val out = (process!!)
       val json = Json.parse(out).asInstanceOf[JsObject]
 
@@ -32,8 +32,8 @@ lazy val root = (project in file("."))
       )({
         case JsArray(values) =>
           val stringValues = values.collect { case JsString(value) => value }
-          Seq("rt.jar", "scala-library-2.10.6.jar", "/classes", "/test-classes").foreach { entry =>
-            trueOrError(stringValues.exists(_.endsWith(entry)), s"scuggest_import_path: could not find $entry")
+          Seq("""rt\.jar""".r, """scala-library(-2.10.6)?.jar""".r, """/classes""".r, """/test-classes""".r).foreach { entry =>
+            trueOrError(stringValues.exists(v => entry.findFirstMatchIn(v).isDefined), s"scuggest_import_path: could not find $entry in ${stringValues.mkString(",")}")
           }
         case other => sys.error("Expected JsArray but got: ${Json.prettyPrint(other)}")
       })

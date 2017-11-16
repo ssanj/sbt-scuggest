@@ -55,12 +55,11 @@ object SbtScuggest extends AutoPlugin {
   override lazy val projectSettings = Seq(
       scuggestSearchFilters in ThisBuild := Seq("sun", "com/sun"),
 
-      scuggestClassDirs <<= (Keys.classDirectory in Compile,
-                             Keys.classDirectory in Test){ (srcDir, testDir) =>
-        Seq(srcDir, testDir)
+      scuggestClassDirs := {
+        Seq((Keys.classDirectory in Compile).value, (Keys.classDirectory in Test).value)
       },
 
-      scuggestSublimeProjName <<= (Keys.name)(identity),
+      scuggestSublimeProjName := Keys.name.value,
 
       scuggestDepFilters in ThisBuild :=
         Seq(
@@ -76,14 +75,15 @@ object SbtScuggest extends AutoPlugin {
 
       scuggestVerbose in ThisBuild := false,
 
-      scuggestGen <<= (Keys.state,
-                       scuggestSublimeProjName,
-                       scuggestClassDirs,
-                       scuggestSearchFilters,
-                       scuggestDepFilters,
-                       Keys.streams,
-                       scuggestSimulate,
-                       scuggestVerbose) map scuggest
+      scuggestGen := scuggest(
+                       Keys.state.value,
+                       scuggestSublimeProjName.value,
+                       scuggestClassDirs.value,
+                       scuggestSearchFilters.value,
+                       scuggestDepFilters.value,
+                       Keys.streams.value,
+                       scuggestSimulate.value,
+                       scuggestVerbose.value)
   )
 
   def scuggest(state: State,
@@ -195,13 +195,13 @@ object SbtScuggest extends AutoPlugin {
   private def readProjectFile(projectFile: File): ProjectLoadType[String] = {
     Try {
       sbt.IO.readLines(projectFile).mkString(System.lineSeparator)
-    }.toEither(CouldNotReadFile(projectFile, _))
+    }.toE(CouldNotReadFile(projectFile, _))
   }
 
   private def parseProjectJson(content: String): ProjectLoadType[JsValue] = {
     Try {
       Json.parse(content)
-    }.toEither(CouldNotParseContent(content, _))
+    }.toE(CouldNotParseContent(content, _))
   }
 
   private def getProjectFileBackup(projectFile: File): ProjectLoadType[File] =  {
@@ -213,13 +213,13 @@ object SbtScuggest extends AutoPlugin {
   private def backupAndWriteProjectFile(projectFile: File, updatedJson: JsValue): ProjectLoadType[Unit] = {
     for {
       backupFile <- getProjectFileBackup(projectFile)
-      _          <- Try(sbt.IO.copyFile(projectFile, backupFile)).toEither(CouldNotWriteFile(backupFile, _))
-      _          <- Try(sbt.IO.write(projectFile, Json.prettyPrint(updatedJson))).toEither(CouldNotWriteFile(projectFile, _))
+      _          <- Try(sbt.IO.copyFile(projectFile, backupFile)).toE(CouldNotWriteFile(backupFile, _))
+      _          <- Try(sbt.IO.write(projectFile, Json.prettyPrint(updatedJson))).toE(CouldNotWriteFile(projectFile, _))
     } yield ()
   }
 
   private def writeProjectFile(projectFile: File, updatedJson: JsValue): ProjectLoadType[Unit] = {
-    Try(sbt.IO.write(projectFile, Json.prettyPrint(updatedJson))).toEither(CouldNotWriteFile(projectFile, _))
+    Try(sbt.IO.write(projectFile, Json.prettyPrint(updatedJson))).toE(CouldNotWriteFile(projectFile, _))
   }
 
   private def printProjectFile(log: sbt.Logger, projectFile: File, updatedJson: JsValue): ProjectLoadType[Unit] = {
@@ -237,7 +237,7 @@ object SbtScuggest extends AutoPlugin {
   private def getProjectFile(projectDir: URI, projectName: String): ProjectLoadType[File] = {
     Try {
       new File(projectDir.getPath, s"${projectName}.sublime-project")
-    }.toEither(CouldNotFindProjectDir(projectDir, _))
+    }.toE(CouldNotFindProjectDir(projectDir, _))
   }
 
   private def updateSublimeProject(projectURI: URI,
