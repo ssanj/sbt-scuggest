@@ -1,4 +1,3 @@
-> set scuggestSimulate := false
 > scuggestGen
 $ exists emptyProject.sublime-project
 > verifySublimeProj

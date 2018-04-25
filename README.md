@@ -28,7 +28,9 @@ resolvers += Resolver.url("ssanj", new URL("https://dl.bintray.com/ssanj/sbt-plu
 
 ## Settings
 
-* `scuggestSimulate`: Whether to simulate updating the Sublime project file (write to STDOUT) or to update the project file. Defaults to `true`. Run `scuggestGen` with this on to see what will be added to your Sublime project file. Once you are happy with it, then `set scuggestSimulate := false` and run `scuggestGen` to update your Sublime project file.
+* `scuggestSimulate`: Whether to simulate updating the Sublime project file (write to STDOUT) or to update the project file. Defaults to `false`.
+
+Run `set scuggestSimulate := true` and run `scuggestGen` to see what will be added to your Sublime project file.
 
 * `scuggestSublimeProjName`: The name of the sublime project file (*.sublime-project). The default is to use the SBT build name.
 

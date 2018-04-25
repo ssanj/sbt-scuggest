@@ -71,7 +71,7 @@ object SbtScuggest extends AutoPlugin {
             """scala-xml_.+\.jar"""
         ),
 
-      scuggestSimulate in ThisBuild := true,
+      scuggestSimulate in ThisBuild := false,
 
       scuggestVerbose in ThisBuild := false,
 
