@@ -2,7 +2,7 @@ name := "sbt-scuggest"
 
 organization := "net.ssanj"
 
-version := "0.0.8.0-SNAPSHOT"
+version := "0.0.9.0-SNAPSHOT"
 
 scalaVersion := "2.12.3"
 
